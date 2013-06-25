@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import requests
 import random
@@ -31,9 +31,11 @@ class Agent:
     # Value between 0 and 1
     productivity = .5
 
+    activities = []
+
     debug = False
 
-    def __init__ (self, nodeUri, username, password, responsivity = .5, productivity = .5):
+    def __init__ (self, nodeUri, username, password, updateprobability = .5, responsivity = .5, productivity = .5):
         self.nodeUri = nodeUri
         self.username = username
         self.password = password
@@ -51,10 +53,12 @@ class Agent:
         p = random.random()
         if (u < self.updateprobability) :
             # check for updates
+            self.getActivities()
             # iterate over the updates
-                # r = random.random()
-                # if (r < self.responsivity) :
-                    # write a reply
+            for a in self.activities:
+                r = random.random()
+                if (r < self.responsivity) :
+                    self.reply(a)
         if (p < self.productivity) :
             self.post()
 
@@ -65,7 +69,7 @@ class Agent:
             post = {'person': self.personUri, 'friend': uri}
         )
         if (self.debug):
-            print r.content
+            print(r.content)
 
     def post (self):
         r = self.http(
@@ -74,7 +78,23 @@ class Agent:
             post = {'content': 'new message', 'type': 'note'}
         )
         if (self.debug):
-            print r.content
+            print(r.content)
+
+    def reply (self, activity):
+        r = self.http(
+            self.nodeUri,
+            get = {'c': 'activity', 'a': 'addactivity'},
+            post = {'content': 'new reply', 'type': 'comment', 'reply': activity}
+        )
+        if (self.debug):
+            print(r.content)
+
+    def getActivities (self):
+        r = self.http(
+            self.nodeUri,
+            get = {'c': 'user', 'a': 'getactivitystream', 'num': '5', 'own': 'false'},
+        )
+        self.activities = r.text.split()
 
     def signup (self):
         r = self.http(
@@ -83,7 +103,7 @@ class Agent:
             post = {'username': self.username, 'password': self.password, 'passwordVerify': self.password}
         )
         if (self.debug):
-            print r.content
+            print(r.content)
 
     def login (self):
         r = self.http(
@@ -92,12 +112,12 @@ class Agent:
             post = {'username': self.username, 'password': self.password}
         )
         if (self.debug):
-            print r.content
+            print(r.content)
         r = self.http(
             self.nodeUri,
             get = {'c': 'user', 'a': 'getpersonuri'}
         )
-        self.personUri = r.content
+        self.personUri = r.text
 
     def resetModel (self):
         r = self.http(
@@ -105,7 +125,7 @@ class Agent:
             get = {'c': 'setup', 'a': 'cleardatabase'},
         )
         if (self.debug):
-            print r.content
+            print(r.content)
 
     def http (self, uri, get = [], post = []):
         # execute the http request, send the cookie
@@ -120,8 +140,8 @@ class Agent:
             uri+= key + '=' + get[key] + '&'
 
         if (self.debug):
-            print uri
+            print(uri)
 
-        r = self.session.post(uri, post)
+        r = self.session.post(uri, post, headers={'Accept': 'text/json'})
 
         return r

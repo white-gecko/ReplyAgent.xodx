@@ -21,7 +21,7 @@ class Testbed:
             for row in reader:
                 if (row[0][:1] == '#'):
                     row = reader.__next__()
-                a = agent.Agent(row[0], row[1], row[2], row[3], row[4], row[5])
+                a = agent.Agent(row[0], row[1], row[2], float(row[3]), float(row[4]), float(row[5]))
                 self.agentsNotInit.append(a)
         # prepare the agents
         print("preparing agents …")
@@ -39,14 +39,15 @@ class Testbed:
                 self.friendships[row[0]] = row[1]
         # build frienships
         print("establishing friendship relations …")
-        for a in self.friendships.keys():
+        for a in self.friendships:
             b = self.friendships[a]
             self.agents[a].addFriend(b)
             print("\t" + a + " -> " + self.friendships[a])
 
     def start (self):
         # start the simulation
-        print()
+        for a in self.agents:
+            self.agents[a].round()
 
     def stats (self):
         # calculate the stats
